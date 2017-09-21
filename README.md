@@ -73,11 +73,43 @@ sum by(kubernetes_pod_name) (container_memory_usage_bytes{kubernetes_namespace="
 
 *Link:* [Joe Bowers - CoreOS](https://coreos.com/blog/monitoring-kubernetes-with-prometheus.html)
 
+---
+
+**Most expensive time series**
+```
+topk(10, count by (__name__)({__name__=~".+"}))
+```
+
+*Summary:* Which are your most expensive time series to store? When tuning Prometheus, these quries can help you monitor your most expensive metrics. Be cautious, this query is expensive to run.
+
+*Link:* [Brian Brazil - Robust Perception](https://www.robustperception.io/which-are-my-biggest-metrics/)
+
+---
+
+**Most expensive time series**
+```
+topk(10, count by (job)({__name__=~".+"}))
+```
+
+*Summary:* Which of your jobs have the most timeseries? Be cautious, this query is expensive to run.
+
+*Link:* [Brian Brazil - Robust Perception](https://www.robustperception.io/which-are-my-biggest-metrics/)
+
+---
+
+**Which Alerts have been firing?**
+```
+sum(sort_desc(sum_over_time(ALERTS{alertstate=`firing`}[24h]))) by (alertname)
+```
+
+*Summary:* Which of your Alerts have been firing the most? Useful to track alert trends
+
+---
+
 
 # Alert Rules Examples
 
 These are examples of rules you can use with Prometheus to trigger the firing of an event, usually to the Prometheus alertmanager application.
-Each alert's are usually defined with the syntax below, in the examples we just highlight the query section.
 
 ```
 ALERT <alert name>
@@ -89,11 +121,16 @@ ALERT <alert name>
 
 **Disk Will Fill in 4 Hours**
 ```
-predict_linear(node_filesystem_free[1h], 4*3600)
-```
-*Summary:* Asks Prometheus to predict if the hosts disks will fill within four hours, based upon the last hour of sampled data.
-
-*Link:* [Mônica Ribeiro - Medium](https://medium.com/quick-mobile/monitoring-containers-with-prometheus-ffde286c17f7#.87umnk8zv)
+ALERT PreditciveHostDiskSpace
+  IF predict_linear(node_filesystem_free{mountpoint="/"}[4h], 4*3600) < 0  
+  FOR 30m
+  LABELS { severity = "warning" }
+  ANNOTATIONS {
+    summary = "Predictive Disk Space Utilisation Alert",
+    description = "Based on recent sampling, the disk is likely to will fill on volume {{ $labels.mountpoint }} within the next 4 hours for instace: {{ $labels.instance_id }} tagged as: {{ $labels.instance_name_tag }}",
+  }
+  ```
+*Summary:* Asks Prometheus to predict if the hosts disks will fill within four hours, based upon the last hour of sampled data. In this example, we are returning AWS EC2 specific labels to make the alert more readable.
 
 ---
 
@@ -107,3 +144,32 @@ predict_linear(node_filesystem_free[1h], 4*3600)
 
 ---
 
+**Alert on High CPU utilisation**
+```
+  ALERT HostCPUUtilisation
+  IF 100 - (avg by (instance) (irate(node_cpu{mode="idle"}[5m])) * 100) > 70
+  FOR 20m
+  LABELS { severity = "warning" }
+    ANNOTATIONS {
+    summary = "CPU Utilisation Alert",
+    description = "High CPU utilisation detected for instance {{ $labels.instance_id }} tagged as: {{ $labels.instance_name_tag }}, the utilisation is currently: {{ $value }}%",
+  }
+```
+*Summary:* Trigger an alert if a hosts CPU becomes over 70% utilised for 20 minutes or more.
+
+---
+
+**Alert if Prometheus is throttling**
+```
+ALERT PrometheusIngestionThrottling
+  IF prometheus_local_storage_persistence_urgency_score > 0.95
+  FOR 1m
+  LABELS { severity = "warning" }
+  ANNOTATIONS {
+    summary = "Prometheus is (or borderline) throttling ingestion of metrics",
+    description = "Prometheus cannot persist chunks to disk fast enough. It's urgency value is {{$value}}.",
+}
+```
+*Summary:* Trigger an alert if prometheus begins to throttle it's ingestion. If you see this, some TLC is required.
+
+---
