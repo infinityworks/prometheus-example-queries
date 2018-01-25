@@ -9,7 +9,7 @@ Simple or complex, all input is welcome.
 
 * [Prometheus Main Site](https://prometheus.io/)
 * [Prometheus Docs](https://prometheus.io/docs/introduction/overview/)
-* [Prometheus Alert Rules](https://prometheus.io/docs/alerting/rules/)
+* [Prometheus Alert Rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/)
 * [Robust Perception](https://www.robustperception.io/blog/)
 
 
@@ -17,7 +17,7 @@ Simple or complex, all input is welcome.
 # PromQL Examples
 
 Please ensure all examples are submitted in the same format, we'd like to keep this nice and easy to read and maintain.
-The examples may contain some metric names and labels that aren't present on your system, if your looking to re-use these then make sure validate the labels and metric names match your system.
+The examples may contain some metric names and labels that aren't present on your system, if you're looking to re-use these then make sure validate the labels and metric names match your system.
 
 ---
 
@@ -25,7 +25,7 @@ The examples may contain some metric names and labels that aren't present on you
 ```
 100 * (1 - avg by(instance)(irate(node_cpu{mode='idle'}[5m])))
 ```
-*Summary:* Often useful to newcomers to Prometheus looking to replicate common host CPU checks. This query ultimately provides a overall metric for CPU usage, per instance. It does this by calculation based on the `idle` metric of the CPU, working out the overall percentage of the other states for a CPU in a 5 minute window and presenting that data per `instance`.
+*Summary:* Often useful to newcomers to Prometheus looking to replicate common host CPU checks. This query ultimately provides an overall metric for CPU usage, per instance. It does this by a calculation based on the `idle` metric of the CPU, working out the overall percentage of the other states for a CPU in a 5 minute window and presenting that data per `instance`.
 
 ---
 
@@ -58,7 +58,7 @@ and
 rate(api_http_requests_total{status=500}[5m] offset 1h)
 ```
 
-*Summary:*  The `rate()` function calculates the per-second average rate of time series in a range vector. Combining all the above tools, we can get the rates of HTTP requests of a specific timeframe. The query calculates the per-second rates of all HTTP requests that occurred in the last 5 minutes,  an hour ago. Suitable for usage on a `counter` metric.
+*Summary:*  The `rate()` function calculates the per-second average rate of time series in a range vector. Combining all the above tools, we can get the rates of HTTP requests of a specific timeframe. The query calculates the per-second rates of all HTTP requests that occurred in the last 5 minutes, an hour ago. Suitable for usage on a `counter` metric.
 
 *Link:* [Tom Verelst - Ordina](https://ordina-jworks.github.io/monitoring/2016/09/23/Monitoring-with-Prometheus.html)
 
@@ -102,7 +102,7 @@ topk(10, count by (job)({__name__=~".+"}))
 sum(sort_desc(sum_over_time(ALERTS{alertstate=`firing`}[24h]))) by (alertname)
 ```
 
-*Summary:* Which of your Alerts have been firing the most? Useful to track alert trends
+*Summary:* Which of your Alerts have been firing the most? Useful to track alert trends.
 
 ---
 
@@ -117,12 +117,12 @@ ALERT <alert name>
   [ FOR <duration> ]
   [ LABELS <label set> ]
   [ ANNOTATIONS <label set> ]
-``` 
+```
 
 **Disk Will Fill in 4 Hours**
 ```
 ALERT PreditciveHostDiskSpace
-  IF predict_linear(node_filesystem_free{mountpoint="/"}[4h], 4*3600) < 0  
+  IF predict_linear(node_filesystem_free{mountpoint="/"}[4h], 4*3600) < 0
   FOR 30m
   LABELS { severity = "warning" }
   ANNOTATIONS {
@@ -138,7 +138,7 @@ ALERT PreditciveHostDiskSpace
 ```
   IF (sum(node_memory_MemTotal) - sum(node_memory_MemFree + node_memory_Buffers + node_memory_Cached) ) / sum(node_memory_MemTotal) * 100 > 85
 ```
-*Summary:* Trigger an alert if a host memory is almost full. This is done by deducting the total memory by the free, buffered and cached memory and dividing it by total again to obtain a percentage. The `> 85` then only returns when the resulting value is above 85.
+*Summary:* Trigger an alert if the memory of a host is almost full. This is done by deducting the total memory by the free, buffered and cached memory and dividing it by total again to obtain a percentage. The `> 85` will only return when the resulting value is above 85.
 
 *Link:* [Stefan Prodan - Blog](https://stefanprodan.com/2016/a-monitoring-solution-for-docker-hosts-containers-and-containerized-services/)
 
@@ -155,7 +155,7 @@ ALERT PreditciveHostDiskSpace
     description = "High CPU utilisation detected for instance {{ $labels.instance_id }} tagged as: {{ $labels.instance_name_tag }}, the utilisation is currently: {{ $value }}%",
   }
 ```
-*Summary:* Trigger an alert if a hosts CPU becomes over 70% utilised for 20 minutes or more.
+*Summary:* Trigger an alert if a host's CPU becomes over 70% utilised for 20 minutes or more.
 
 ---
 
@@ -170,6 +170,6 @@ ALERT PrometheusIngestionThrottling
     description = "Prometheus cannot persist chunks to disk fast enough. It's urgency value is {{$value}}.",
 }
 ```
-*Summary:* Trigger an alert if prometheus begins to throttle it's ingestion. If you see this, some TLC is required.
+*Summary:* Trigger an alert if Prometheus begins to throttle its ingestion. If you see this, some TLC is required.
 
 ---
