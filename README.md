@@ -109,34 +109,38 @@ sum(sort_desc(sum_over_time(ALERTS{alertstate=`firing`}[24h]))) by (alertname)
 
 # Alert Rules Examples
 
-These are examples of rules you can use with Prometheus to trigger the firing of an event, usually to the Prometheus alertmanager application.
+These are examples of rules you can use with Prometheus to trigger the firing of an event, usually to the Prometheus alertmanager application. You can refer to the [official documentation](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) for more information.
 
-```
-ALERT <alert name>
-  IF <expression>
-  [ FOR <duration> ]
-  [ LABELS <label set> ]
-  [ ANNOTATIONS <label set> ]
+```yaml
+- alert: <alert name>
+  expr: <expression>
+  for: <duration>
+  labels:
+    label_name: <label value>
+  annotations:
+    annotation_name: <annotation value>
 ```
 
 **Disk Will Fill in 4 Hours**
+```yaml
+- alert: PreditciveHostDiskSpace
+  expr: predict_linear(node_filesystem_free{mountpoint="/"}[4h], 4 * 3600) < 0
+  for: 30m
+  labels:
+    severity: warning
+  annotations:
+    description: 'Based on recent sampling, the disk is likely to will fill on volume
+      {{ $labels.mountpoint }} within the next 4 hours for instace: {{ $labels.instance_id
+      }} tagged as: {{ $labels.instance_name_tag }}'
+    summary: Predictive Disk Space Utilisation Alert
 ```
-ALERT PreditciveHostDiskSpace
-  IF predict_linear(node_filesystem_free{mountpoint="/"}[4h], 4*3600) < 0
-  FOR 30m
-  LABELS { severity = "warning" }
-  ANNOTATIONS {
-    summary = "Predictive Disk Space Utilisation Alert",
-    description = "Based on recent sampling, the disk is likely to will fill on volume {{ $labels.mountpoint }} within the next 4 hours for instace: {{ $labels.instance_id }} tagged as: {{ $labels.instance_name_tag }}",
-  }
-  ```
 *Summary:* Asks Prometheus to predict if the hosts disks will fill within four hours, based upon the last hour of sampled data. In this example, we are returning AWS EC2 specific labels to make the alert more readable.
 
 ---
 
 **Alert on High Memory Load**
-```
-  IF (sum(node_memory_MemTotal) - sum(node_memory_MemFree + node_memory_Buffers + node_memory_Cached) ) / sum(node_memory_MemTotal) * 100 > 85
+```yaml
+- expr: (sum(node_memory_MemTotal) - sum(node_memory_MemFree + node_memory_Buffers + node_memory_Cached) ) / sum(node_memory_MemTotal) * 100 > 85
 ```
 *Summary:* Trigger an alert if the memory of a host is almost full. This is done by deducting the total memory by the free, buffered and cached memory and dividing it by total again to obtain a percentage. The `> 85` will only return when the resulting value is above 85.
 
@@ -145,30 +149,33 @@ ALERT PreditciveHostDiskSpace
 ---
 
 **Alert on High CPU utilisation**
-```
-  ALERT HostCPUUtilisation
-  IF 100 - (avg by (instance) (irate(node_cpu{mode="idle"}[5m])) * 100) > 70
-  FOR 20m
-  LABELS { severity = "warning" }
-    ANNOTATIONS {
-    summary = "CPU Utilisation Alert",
-    description = "High CPU utilisation detected for instance {{ $labels.instance_id }} tagged as: {{ $labels.instance_name_tag }}, the utilisation is currently: {{ $value }}%",
-  }
+```yaml
+- alert: HostCPUUtilisation
+  expr: 100 - (avg by(instance) (irate(node_cpu{mode="idle"}[5m])) * 100) > 70
+  for: 20m
+  labels:
+    severity: warning
+  annotations:
+    description: 'High CPU utilisation detected for instance {{ $labels.instance_id
+      }} tagged as: {{ $labels.instance_name_tag }}, the utilisation is currently:
+      {{ $value }}%'
+    summary: CPU Utilisation Alert
 ```
 *Summary:* Trigger an alert if a host's CPU becomes over 70% utilised for 20 minutes or more.
 
 ---
 
 **Alert if Prometheus is throttling**
-```
-ALERT PrometheusIngestionThrottling
-  IF prometheus_local_storage_persistence_urgency_score > 0.95
-  FOR 1m
-  LABELS { severity = "warning" }
-  ANNOTATIONS {
-    summary = "Prometheus is (or borderline) throttling ingestion of metrics",
-    description = "Prometheus cannot persist chunks to disk fast enough. It's urgency value is {{$value}}.",
-}
+```yaml
+- alert: PrometheusIngestionThrottling
+  expr: prometheus_local_storage_persistence_urgency_score > 0.95
+  for: 1m
+  labels:
+    severity: warning
+  annotations:
+    description: Prometheus cannot persist chunks to disk fast enough. It's urgency
+      value is {{$value}}.
+    summary: Prometheus is (or borderline) throttling ingestion of metrics
 ```
 *Summary:* Trigger an alert if Prometheus begins to throttle its ingestion. If you see this, some TLC is required.
 
