@@ -99,7 +99,7 @@ topk(10, count by (job)({__name__=~".+"}))
 
 **Which Alerts have been firing?**
 ```
-sum(sort_desc(sum_over_time(ALERTS{alertstate=`firing`}[24h]))) by (alertname)
+sort_desc(sum(sum_over_time(ALERTS{alertstate=`firing`}[24h])) by (alertname))
 ```
 
 *Summary:* Which of your Alerts have been firing the most? Useful to track alert trends.
