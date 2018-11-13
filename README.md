@@ -111,7 +111,7 @@ The examples may contain some metric names and labels that aren't present on you
 **Which Alerts have been firing?**
 ```yaml
 - record: alerts_fired:24h
-  expr: sum(sort_desc(sum_over_time(ALERTS{alertstate=`firing`}[24h]))) by (alertname)
+  expr:   sort_desc(sum(sum_over_time(ALERTS{alertstate=`firing`}[24h])) by (alertname))
 ```
 
 *Summary:* Which of your Alerts have been firing the most? Useful to track alert trends.
