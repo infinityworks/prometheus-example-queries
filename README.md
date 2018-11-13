@@ -16,23 +16,28 @@ Simple or complex, all input is welcome.
 
 # PromQL Examples
 
+These examples are formatted as [recording rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/), but can be used as normal expressions.
+
 Please ensure all examples are submitted in the same format, we'd like to keep this nice and easy to read and maintain.
 The examples may contain some metric names and labels that aren't present on your system, if you're looking to re-use these then make sure validate the labels and metric names match your system.
 
 ---
 
 **Show Overall CPU usage for a server**
-```
-100 * (1 - avg by(instance)(irate(node_cpu{mode='idle'}[5m])))
+```yaml
+- record: instance:node_cpu_utilization_percent:rate5m
+  expr: 100 * (1 - avg by(instance)(irate(node_cpu{mode='idle'}[5m])))
 ```
 *Summary:* Often useful to newcomers to Prometheus looking to replicate common host CPU checks. This query ultimately provides an overall metric for CPU usage, per instance. It does this by a calculation based on the `idle` metric of the CPU, working out the overall percentage of the other states for a CPU in a 5 minute window and presenting that data per `instance`.
 
 ---
 
 **Track http error rates as a proportion of total traffic**
-```
- rate(demo_api_request_duration_seconds_count{status="500",job="demo"}[5m]) * 50
-> on(job, instance, method, path)
+```yaml
+- record: job_instance_method_path:demo_api_request_errors_50x_requests:rate5m
+  expr: >
+    rate(demo_api_request_duration_seconds_count{status="500",job="demo"}[5m]) * 50
+      > on(job, instance, method, path)
     rate(demo_api_request_duration_seconds_count{status="200",job="demo"}[5m])
 ```
 *Summary:* This query selects the 500-status rate for any job, instance, method, and path combinations for which the 200-status rate is not at least 50 times higher than the 500-status rate. The rate function has been used here as it's designed to be used with the counters in this query.
@@ -42,9 +47,11 @@ The examples may contain some metric names and labels that aren't present on you
 ---
 
 **90th Percentile latency**
-```
- histogram_quantile(0.9, rate(demo_api_request_duration_seconds_bucket{job="demo"}[5m])) > 0.05
-and
+```yaml
+- record: instance:demo_api_90th_over_50ms_and_requests_over_1:rate5m
+  expr: >
+    histogram_quantile(0.9, rate(demo_api_request_duration_seconds_bucket{job="demo"}[5m])) > 0.05
+      and
     rate(demo_api_request_duration_seconds_count{job="demo"}[5m]) > 1
 ```
 *Summary:*  Select any HTTP endpoints that have a 90th percentile latency higher than 50ms (0.05s) but only for the dimensional combinations that receive more than one request per second. We use the `histogram_quantile()` function for the percentile calculation here. It calculates the 90th percentile latency for each sub-dimension. To filter the resulting bad latencies and retain only those that receive more than one request per second. `histogram_quantile` is only suitable for usage with a Histogram metric.
@@ -54,8 +61,9 @@ and
 ---
 
 **HTTP request rate, per second.. an hour ago**
-```
-rate(api_http_requests_total{status=500}[5m] offset 1h)
+```yaml
+- record: instance:api_http_requests_total:offset_1h_rate5m
+  expr: rate(api_http_requests_total{status=500}[5m] offset 1h)
 ```
 
 *Summary:*  The `rate()` function calculates the per-second average rate of time series in a range vector. Combining all the above tools, we can get the rates of HTTP requests of a specific timeframe. The query calculates the per-second rates of all HTTP requests that occurred in the last 5 minutes, an hour ago. Suitable for usage on a `counter` metric.
@@ -65,8 +73,9 @@ rate(api_http_requests_total{status=500}[5m] offset 1h)
 ---
 
 **Kubernetes Container Memory Usage**
-```
-sum by(kubernetes_pod_name) (container_memory_usage_bytes{kubernetes_namespace="kube-system"})
+```yaml
+- record: kubernetes_pod_name:container_memory_usage_bytes:sum
+  expr: sum by(kubernetes_pod_name) (container_memory_usage_bytes{kubernetes_namespace="kube-system"})
 ```
 
 *Summary:* How much memory are the tools in the kube-system namespace using? Break it down by Pod and NameSpace!
@@ -76,8 +85,9 @@ sum by(kubernetes_pod_name) (container_memory_usage_bytes{kubernetes_namespace="
 ---
 
 **Most expensive time series**
-```
-topk(10, count by (__name__)({__name__=~".+"}))
+```yaml
+- record: metric_name:metrics:top_ten_count
+  expr: topk(10, count by (__name__)({__name__=~".+"}))
 ```
 
 *Summary:* Which are your most expensive time series to store? When tuning Prometheus, these quries can help you monitor your most expensive metrics. Be cautious, this query is expensive to run.
@@ -87,8 +97,9 @@ topk(10, count by (__name__)({__name__=~".+"}))
 ---
 
 **Most expensive time series**
-```
-topk(10, count by (job)({__name__=~".+"}))
+```yaml
+- record: job:metrics:top_ten_count
+  expr: topk(10, count by (job)({__name__=~".+"}))
 ```
 
 *Summary:* Which of your jobs have the most timeseries? Be cautious, this query is expensive to run.
@@ -98,8 +109,9 @@ topk(10, count by (job)({__name__=~".+"}))
 ---
 
 **Which Alerts have been firing?**
-```
-sort_desc(sum(sum_over_time(ALERTS{alertstate=`firing`}[24h])) by (alertname))
+```yaml
+- record: alerts_fired:24h
+  expr:   sort_desc(sum(sum_over_time(ALERTS{alertstate=`firing`}[24h])) by (alertname))
 ```
 
 *Summary:* Which of your Alerts have been firing the most? Useful to track alert trends.
