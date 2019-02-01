@@ -133,6 +133,25 @@ These are examples of rules you can use with Prometheus to trigger the firing of
     annotation_name: <annotation value>
 ```
 
+---
+
+**Disk Will Fill in the next 30 hours or less and returning the predicted crash time based on the past 1h of sampling.**
+```yaml
+- alert: DiskFillBasedonTrend
+  expr: round(node_filesystem_free / (-1 * delta(node_filesystem_free[1h])),1) > 0 < 30
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    description: 'Based on recent sampling, the disk is likely to fill on volume
+      {{ $labels.mountpoint }} in the next {{ $value }} hour(s) for instance: {{ $labels.instance_id
+      }} tagged as: {{ $labels.instance_name_tag }}'
+    summary: Predictive Disk Space Utilization Alert
+```
+*Summary:* This alert will predict when the disk will fill and send this information with the alert.
+
+---
+
 **Disk Will Fill in 4 Hours**
 ```yaml
 - alert: PreditciveHostDiskSpace
@@ -142,9 +161,9 @@ These are examples of rules you can use with Prometheus to trigger the firing of
     severity: warning
   annotations:
     description: 'Based on recent sampling, the disk is likely to will fill on volume
-      {{ $labels.mountpoint }} within the next 4 hours for instace: {{ $labels.instance_id
+      {{ $labels.mountpoint }} within the next 4 hours for instance: {{ $labels.instance_id
       }} tagged as: {{ $labels.instance_name_tag }}'
-    summary: Predictive Disk Space Utilisation Alert
+    summary: Predictive Disk Space Utilization Alert
 ```
 *Summary:* Asks Prometheus to predict if the hosts disks will fill within four hours, based upon the last hour of sampled data. In this example, we are returning AWS EC2 specific labels to make the alert more readable.
 
