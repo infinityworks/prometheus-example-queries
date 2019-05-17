@@ -150,6 +150,26 @@ These are examples of rules you can use with Prometheus to trigger the firing of
 
 ---
 
+**Disk Will Fill in 2 weeks -- Less jumpy version**
+```yaml
+- alert: PreditciveHostDiskSpace
+  expr: predict_linear(node_filesystem_free{fstype!="tmpfs"}[1w], 3600 * 24 * 2w) < 0
+  for: 1d
+  labels:
+    severity: warning
+  annotations:
+    description: Device {{$labels.device}} mounted at {{ $labels.mountpoint }} on
+              node {{$labels.instance}} likely to fill within the next 4 hours.
+    summary: Predictive Disk Space Utilisation Alert
+```
+*Summary:* This is meant to catch a gradually filling disk,
+while not alerting on backups, log rotation, etc.
+It looks at all filesystems, not just root, but skips `tmpfs`.
+
+*Inspiration:* [Circonus Blog](https://www.circonus.com/2014/11/alerting-on-disk-space-the-right-way/)
+
+---
+
 **Alert on High Memory Load**
 ```yaml
 - expr: (sum(node_memory_MemTotal) - sum(node_memory_MemFree + node_memory_Buffers + node_memory_Cached) ) / sum(node_memory_MemTotal) * 100 > 85
