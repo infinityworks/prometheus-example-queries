@@ -23,7 +23,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**Show Overall CPU usage for a server**
+#### Show Overall CPU usage for a server
 ```yaml
 - record: instance:node_cpu_utilization_percent:rate5m
   expr: 100 * (1 - avg by(instance)(irate(node_cpu{mode='idle'}[5m])))
@@ -32,7 +32,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**Track http error rates as a proportion of total traffic**
+#### Track http error rates as a proportion of total traffic
 ```yaml
 - record: job_instance_method_path:demo_api_request_errors_50x_requests:rate5m
   expr: >
@@ -46,7 +46,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**90th Percentile latency**
+#### 90th Percentile latency
 ```yaml
 - record: instance:demo_api_90th_over_50ms_and_requests_over_1:rate5m
   expr: >
@@ -60,7 +60,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**HTTP request rate, per second.. an hour ago**
+#### HTTP request rate, per second.. an hour ago
 ```yaml
 - record: instance:api_http_requests_total:offset_1h_rate5m
   expr: rate(api_http_requests_total{status=500}[5m] offset 1h)
@@ -72,7 +72,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**Kubernetes Container Memory Usage**
+#### Kubernetes Container Memory Usage
 ```yaml
 - record: kubernetes_pod_name:container_memory_usage_bytes:sum
   expr: sum by(kubernetes_pod_name) (container_memory_usage_bytes{kubernetes_namespace="kube-system"})
@@ -84,7 +84,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**Most expensive time series**
+#### Most expensive time series
 ```yaml
 - record: metric_name:metrics:top_ten_count
   expr: topk(10, count by (__name__)({__name__=~".+"}))
@@ -96,7 +96,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**Most expensive time series**
+#### Most expensive time series
 ```yaml
 - record: job:metrics:top_ten_count
   expr: topk(10, count by (job)({__name__=~".+"}))
@@ -108,7 +108,7 @@ The examples may contain some metric names and labels that aren't present on you
 
 ---
 
-**Which Alerts have been firing?**
+#### Which Alerts have been firing?
 ```yaml
 - record: alerts_fired:24h
   expr:   sort_desc(sum(sum_over_time(ALERTS{alertstate=`firing`}[24h])) by (alertname))
@@ -133,7 +133,7 @@ These are examples of rules you can use with Prometheus to trigger the firing of
     annotation_name: <annotation value>
 ```
 
-**Disk Will Fill in 4 Hours**
+#### Disk Will Fill in 4 Hours
 ```yaml
 - alert: PreditciveHostDiskSpace
   expr: predict_linear(node_filesystem_free{mountpoint="/"}[4h], 4 * 3600) < 0
@@ -150,7 +150,7 @@ These are examples of rules you can use with Prometheus to trigger the firing of
 
 ---
 
-**Alert on High Memory Load**
+#### Alert on High Memory Load
 ```yaml
 - expr: (sum(node_memory_MemTotal) - sum(node_memory_MemFree + node_memory_Buffers + node_memory_Cached) ) / sum(node_memory_MemTotal) * 100 > 85
 ```
@@ -160,7 +160,7 @@ These are examples of rules you can use with Prometheus to trigger the firing of
 
 ---
 
-**Alert on High CPU utilisation**
+#### Alert on High CPU utilisation
 ```yaml
 - alert: HostCPUUtilisation
   expr: 100 - (avg by(instance) (irate(node_cpu{mode="idle"}[5m])) * 100) > 70
@@ -177,7 +177,7 @@ These are examples of rules you can use with Prometheus to trigger the firing of
 
 ---
 
-**Alert if Prometheus is throttling**
+#### Alert if Prometheus is throttling
 ```yaml
 - alert: PrometheusIngestionThrottling
   expr: prometheus_local_storage_persistence_urgency_score > 0.95
